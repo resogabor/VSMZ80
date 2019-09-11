@@ -65,6 +65,8 @@ private:
 	IDSIMPIN *pin_D[8];
 
 	IDEBUGPOPUP *myPopup;
+	IUSERPOPUP *myMessage;
+
 
 	// Global variables
 	UINT8 cycle = 0;		// Current cycle of the state machine
@@ -76,6 +78,7 @@ private:
 	UINT8 IsBusRQ = 0;		// Indicates if the processor is on bus request
 	UINT8 IsInt = 0;		// Indicates if the processor is interrupted
 	UINT8 IsNMI = 0;		// Indicates if the processor is on non-maskable interrupt
+	UINT8 OpPrefix = 0;		// Op code Prefix (CB, DD, ED, FD)
 
 	int LogLine = 1;
 	char LogLineT[10];
@@ -83,16 +86,27 @@ private:
 
 	// Processor registers
 #define REGSIZE 30
+
 	typedef struct {
 		union {
 			struct {
 				UINT8 ARRAY[REGSIZE];
 			};
-			struct {
-				UINT16 PC, IR, WZ, SP, IY, IX, HL, HL_, DE, DE_, BC, BC_, AF, AF_, IFF;
+			/*struct {
+				UINT8 reg8[18];
 			};
-			struct { // 0    1  2  3  4  5    6    7    8    9   10   11 12 13  14  15 16 17  18  19 20 21  22  23 24 25  26  27    28    29
-				UINT8 PCl, PCh, R, I, Z, W, SPl, SPh, IYl, IYh, IXl, IXh, L, H, L_, H_, E, D, E_, D_, C, B, C_, B_, F, A, F_, A_, IFF1, IFF2;
+			struct {
+				UINT16 reg16[11];
+			};
+			struct {
+				UINT16 reg16_2[4];
+			};*/
+
+			struct {
+				UINT16 BC, DE, HL, SP, AF, IR, BC_, DE_, HL_, SP_, AF_, IY, IX, PC, WZ;
+			};
+			struct {// 0  1  2  3  4  5   6    7   8  9  10 11 12 13  14  15  16  17   18    19   20   21   22   23   24    25   26  27   28  29
+				UINT8  B, C, D, E, H, L,SPh, SPl, A, F, I, R, B_, C_, D_, E_, H_, L_, SPh_, SPl_, A_, IYl, IYh, IXl, IXh, PCh, PC1, WZl, WZh, W;
 			};
 		};
 	} tZ80REG;

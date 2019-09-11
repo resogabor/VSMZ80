@@ -95,106 +95,126 @@ void DsimModel::Execute(void) {								// Executes an instruction
 	sprintf_s(LogMessage, "    Executing 0x%02x step %d...", InstR, step);
 	InfoLog(LogMessage);
 #endif
-	int done = 0;											// Indicates done executing
+	int done = 0; // Indicates done executing
 
+	if (InstR == 0xCB || InstR == 0xDD || InstR == 0xED || InstR == 0xFD) {
+		OpPrefix = InstR;
+		cycle = FETCH;
+		step = 0;
+	}
+	int x = InstR >> 6;
+	int y = (InstR >> 3) & 7;
+	int z = InstR & 7;
+	
 	if (step) {
-		switch (InstR) {
-		case 0x00:											// NOP
-			done++;
-			break;
-		case 0x21:											// LD HL, nnnn
-			switch (step++) {
-			case 1:
-				cycle = READ;
-				Addr = reg.PC++;
-				break;
-			case 2:
-				reg.L = Data;
-				Addr = reg.PC++;
-				break;
-			case 3:
-				reg.H = Data;
-#ifdef DEBUGCALLS
-				sprintf_s(LogMessage, "        HL=0x%04x", reg.HL);
-				InfoLog(LogMessage);
-#endif
-				done++;
-				break;
-			}
-			break;
-		case 0x2C:											// INC L
-			reg.L++;
-#ifdef DEBUGCALLS
-			sprintf_s(LogMessage, "        L=0x%02x", reg.L);
-			InfoLog(LogMessage);
-#endif
-			done++;
-			break;
-		case 0x3C:											// INC A
-			reg.A++;
-#ifdef DEBUGCALLS
-			sprintf_s(LogMessage, "        A=0x%02x", reg.A);
-			InfoLog(LogMessage);
-#endif
-			done++;
-			break;
-		case 0x3E:											// LD A, nn
-			switch (step++) {
-			case 1:
-				cycle = READ;
-				Addr = reg.PC;
-				break;
-			case 2:
-				reg.A = Data;
-				reg.PC++;
-#ifdef DEBUGCALLS
-				sprintf_s(LogMessage, "        A=0x%02x", reg.A);
-				InfoLog(LogMessage);
-#endif
-				done++;
-				break;
-			}
-			break;
-		case 0x77:											// LD (HL), A
-			switch (step++) {
-			case 1:
-				cycle = WRITE;
-				Addr = reg.HL;
-				Data = reg.A;
-				break;
-			case 2:
-#ifdef DEBUGCALLS
-				sprintf_s(LogMessage, "        0x%04x=0x%02x", reg.HL, reg.A);
-				InfoLog(LogMessage);
-#endif
-				done++;
-				break;
-			}
-			break;
-		case 0xc3:											// JP nnnn
-			switch (step++) {
-			case 1:
-				cycle = READ;
-				Addr = reg.PC++;
-				break;
-			case 2:
-				Addr = reg.PC++;
-				reg.Z = Data;
-				break;
-			case 3:
-				reg.W = Data;
-				reg.PC = reg.WZ;
-#ifdef DEBUGCALLS
-				sprintf_s(LogMessage, "        PC=0x%04x", reg.WZ);
-				InfoLog(LogMessage);
-#endif
-				done++;
-				break;
-			}
-			break;
-		default:											// Undefined = NOP
-			break;
-		}
+		//switch()
+
+		//switch (InstR) {
+		//case 0x00:											// nop
+		//	done++;
+		//	break;
+//		case 0x01:											//LD BC, nnnn
+//			switch (step++)
+//			case 1:
+//
+//				break;
+//			{
+//			default:
+//				break;
+//			}
+//		case 0x21:											// LD HL, nnnn
+//			switch (step++) {
+//			case 1:
+//				cycle = READ;
+//				Addr = reg.PC++;
+//				break;
+//			case 2:
+//				reg.L = Data;
+//				Addr = reg.PC++;
+//				break;
+//			case 3:
+//				reg.H = Data;
+//#ifdef DEBUGCALLS
+//				sprintf_s(LogMessage, "        HL=0x%04x", reg.HL);
+//				InfoLog(LogMessage);
+//#endif
+//				done++;
+//				break;
+//			}
+//			break;
+//		case 0x2C:											// INC L
+//			reg.L++;
+//#ifdef DEBUGCALLS
+//			sprintf_s(LogMessage, "        L=0x%02x", reg.L);
+//			InfoLog(LogMessage);
+//#endif
+//			done++;
+//			break;
+//		case 0x3C:											// INC A
+//			reg.A++;
+//#ifdef DEBUGCALLS
+//			sprintf_s(LogMessage, "        A=0x%02x", reg.A);
+//			InfoLog(LogMessage);
+//#endif
+//			done++;
+//			break;
+//		case 0x3E:											// LD A, nn
+//			switch (step++) {
+//			case 1:
+//				cycle = READ;
+//				Addr = reg.PC;
+//				break;
+//			case 2:
+//				reg.A = Data;
+//				reg.PC++;
+//#ifdef DEBUGCALLS
+//				sprintf_s(LogMessage, "        A=0x%02x", reg.A);
+//				InfoLog(LogMessage);
+//#endif
+//				done++;
+//				break;
+//			}
+//			break;
+//		case 0x77:											// LD (HL), A
+//			switch (step++) {
+//			case 1:
+//				cycle = WRITE;
+//				Addr = reg.HL;
+//				Data = reg.A;
+//				break;
+//			case 2:
+//#ifdef DEBUGCALLS
+//				sprintf_s(LogMessage, "        0x%04x=0x%02x", reg.HL, reg.A);
+//				InfoLog(LogMessage);
+//#endif
+//				done++;
+//				break;
+//			}
+//			break;
+//		case 0xc3:											// JP nnnn
+//			switch (step++) {
+//			case 1:
+//				cycle = READ;
+//				Addr = reg.reg16[REG_PC]++;
+//				break;
+//			case 2:
+//				Addr = reg.reg16[REG_PC]++;
+//				reg.Z = Data;
+//				break;
+//			case 3:
+//				reg.W = Data;
+//				reg.PC = reg.WZ;
+//#ifdef DEBUGCALLS
+//				sprintf_s(LogMessage, "        PC=0x%04x", reg.WZ);
+//				InfoLog(LogMessage);
+//#endif
+//				done++;
+//				break;
+//			}
+//			break;
+//		default:											// Undefined = NOP
+//			break;
+//		}
 		if (done) {
 			cycle = FETCH;
 			step = 0;
@@ -214,6 +234,8 @@ VOID DsimModel::setup(IINSTANCE *instance, IDSIMCKT *dsimckt) {
 	inst = instance;
 	ckt = dsimckt;
 
+	
+	ckt->setcallback(1000000000000, this, 0x25);
 	CREATEPOPUPSTRUCT *cps = new CREATEPOPUPSTRUCT;
 	cps->caption = "Z80 Simulator Debugger Log";			// WIN Header
 	cps->flags = PWF_VISIBLE | PWF_SIZEABLE;				// Show + Size
@@ -222,7 +244,16 @@ VOID DsimModel::setup(IINSTANCE *instance, IDSIMCKT *dsimckt) {
 	cps->width = 400;
 	cps->id = 123;
 
+	CREATEPOPUPSTRUCT *msg = new CREATEPOPUPSTRUCT;
+	msg->caption = "MyMessage";
+	msg->type = PWT_USER;
+	msg->flags = PWF_HIDEONANIMATE | PWF_SIZEABLE | PWF_VISIBLE;
+	msg->height = 500;
+	msg->width = 400;
+	msg->id = 1234;
+
 	myPopup = (IDEBUGPOPUP *)instance->createpopup(cps);
+	myMessage = (IUSERPOPUP *)instance->createpopup(msg);
 
 	InfoLog("Connecting control pins...");
 
@@ -262,9 +293,55 @@ VOID DsimModel::setup(IINSTANCE *instance, IDSIMCKT *dsimckt) {
 }
 
 VOID DsimModel::runctrl(RUNMODES mode) {
+	switch (mode)
+	{
+	case RM_BATCH:
+		break;
+	case RM_START:
+		break;
+	case RM_STOP:
+		break;
+	case RM_SUSPEND:
+		sprintf_s(LogMessage, "Suspended...");
+		InfoLog(LogMessage);
+		myMessage->callwindowproc(1, 23, 10);
+		break;
+	case RM_ANIMATE:
+		break;
+	case RM_STEPTIME:
+		break;
+	case RM_STEPOVER:
+		sprintf_s(LogMessage, "Step over...");
+		InfoLog(LogMessage);
+		break;
+	case RM_STEPINTO:
+		sprintf_s(LogMessage, "STEP into...");
+		InfoLog(LogMessage);
+		break;
+	case RM_STEPOUT:
+		sprintf_s(LogMessage, "Step out...");
+		InfoLog(LogMessage);
+
+		break;
+	case RM_STEPTO:
+		sprintf_s(LogMessage, "Step to...");
+		InfoLog(LogMessage);
+
+		break;
+	case RM_META:
+		break;
+	case RM_DUMP:
+		break;
+	default:
+		break;
+	}
+	
+	if (mode == RM_SUSPEND) {
+	}
 }
 
 VOID DsimModel::actuate(REALTIME time, ACTIVESTATE newstate) {
+	
 }
 
 BOOL DsimModel::indicate(REALTIME time, ACTIVEDATA *data) {
@@ -273,7 +350,7 @@ BOOL DsimModel::indicate(REALTIME time, ACTIVEDATA *data) {
 
 VOID DsimModel::clockstep(ABSTIME time, DSIMMODES mode) {
 	if (pin_CLK->isedge()) {
-
+		//ckt->suspend(inst, "Clolc period!");
 #ifdef DEBUGCALLS
 		sprintf_s(LogMessage, "Cycle %d state %d...", cycle, state);
 		InfoLog(LogMessage);
@@ -407,7 +484,11 @@ VOID DsimModel::clockstep(ABSTIME time, DSIMMODES mode) {
 }
 
 VOID DsimModel::simulate(ABSTIME time, DSIMMODES mode) {
+	
 }
 
 VOID DsimModel::callback(ABSTIME time, EVENTID eventid) {
+	sprintf_s(LogMessage, "CallBack: %2x", eventid);
+	InfoLog(LogMessage);
+
 }
