@@ -1,5 +1,11 @@
-#include "StdAfx.h"
+//#include "StdAfx.h"
 #include "DsimModel.h"
+
+#include <string.h>
+
+
+
+
 
 void DsimModel::HIZAddr(ABSTIME time) {						// Sets the address bus to HIZ
 	int i;
@@ -97,22 +103,143 @@ void DsimModel::Execute(void) {								// Executes an instruction
 #endif
 	int done = 0; // Indicates done executing
 
-	if (InstR == 0xCB || InstR == 0xDD || InstR == 0xED || InstR == 0xFD) {
-		OpPrefix = InstR;
-		cycle = FETCH;
-		step = 0;
-	}
-	int x = InstR >> 6;
-	int y = (InstR >> 3) & 7;
-	int z = InstR & 7;
-	
 	if (step) {
+		if (OpPrefix1 == 0) {
+			bool jr = false;
+			switch (opCodePrefix.x)				
+			{
+				case 0:
+					switch (opCodePrefix.z)
+					{
+						case 0:
+							switch (opCodePrefix.y)
+							{
+								case 0:								// NOP
+									done++;
+									break;
+								case 1:								// EX AF, AF'
+									reg.A = reg.A_;
+									reg.F = reg.F_;
+									done++;
+									break;
+								case 2:								//DJNZ d
+									break;
+								case 3:								//JR d
+									jr = true;
+								//JR cc[y-4], d
+								case 4:
+									jr = (reg.F & 0b00000001) == 0b00000001; //JR F[NZ], d
+								case 5:
+									jr = (reg.F & 0b00000010) == 0b00000010; //JR F[Z], d
+								case 6:
+									jr = (reg.F & 0b00000100) == 0b00000100; //JR F[NC], d
+								case 7:								
+									jr = (reg.F & 0b00001000) == 0b00001000; //JR F[C], d
+										if (jr) {
+											switch (step++)
+											{
+											case 1:
+												cycle = READ;
+												Addr = reg.PC++;
+												break;
+											case 2:
+												reg.PC = reg.PC + Data;
+												done++;
+												break;
+											default:
+												break;
+											}
+										}
+									break;
+								default:
+									break;
+							}
+							break;
+						case 1:
+							switch (opCodePrefix.q)
+							{
+								case 0:								// LD dd, nn
+									switch (step++)
+									{
+										case 1:
+											cycle = READ;
+											Addr = reg.PC++;
+											break;
+										case 2:
+											if (opCodePrefix.p != 3) {
+												reg.ARRAY[(opCodePrefix.p * 2) + 1] = Data;
+											}
+											else {
+												reg.SPl = Data;
+											}
+											Addr = reg.PC++;
+										case 3:
+											if (opCodePrefix.p != 3) {
+												reg.ARRAY[opCodePrefix.p * 2] = Data;
+											}
+											else {
+												reg.SPh = Data;
+												reg.SP = (reg.SPh << 8) | reg.SPl;
+											}
+											done++;
+										default:
+											break;
+									}
+									break;
+								case 1:								// ADD HL, dd
+									switch (step++) {
+										case 1:
+											if (opCodePrefix.p != 3) {
+												reg.L = reg.L + reg.ARRAY[(opCodePrefix.p * 2) + 1];
+												if ((reg.L & 0b100) == 0b100) {
+													reg.H++;
+													reg.L = reg.L << 1;
+												}
+												reg.H = reg.H + reg.ARRAY[opCodePrefix.p * 2]; 												
+											}											
+											else {
+												tReg.temp1 = reg.SP;
+											}
+											tReg.WAIT_C = 6;
+											cycle = WAIT;
+											done++;
+											break;
+										default:
+											break;
+									}
+									break;
+								default:
+									break;
+							}
+						case 2:
+						default:
+							break;
+					}
+					break;
+				case 1:
+					if (opCodePrefix.x != 6) {
+						reg.ARRAY[opCodePrefix.y] = reg.ARRAY[opCodePrefix.z];		// LD r, s
+						done++;
+					}
+					else {
+						IsHalted = 1;
+						done++;														// HALT
+					}
+					break;
+				case 2:
+					break;
+				case 3:
+					break;
+				default:
+					break;
+			}
+		}
 		//switch()
 
-		//switch (InstR) {
-		//case 0x00:											// nop
-		//	done++;
-		//	break;
+//		switch (InstR) {
+//		case 0x00:											// nop
+//			done++;
+//			break;
 //		case 0x01:											//LD BC, nnnn
 //			switch (step++)
 //			case 1:
@@ -215,10 +342,12 @@ void DsimModel::Execute(void) {								// Executes an instruction
 //		default:											// Undefined = NOP
 //			break;
 //		}
-		if (done) {
-			cycle = FETCH;
-			step = 0;
-		}
+//		if (done) {
+//			cycle = FETCH;
+//			step = 0;
+//			OpPrefix1 = 0;
+//			OpPrefix2 = 0;
+//		}
 	}
 }
 
@@ -235,7 +364,7 @@ VOID DsimModel::setup(IINSTANCE *instance, IDSIMCKT *dsimckt) {
 	ckt = dsimckt;
 
 	
-	ckt->setcallback(1000000000000, this, 0x25);
+	
 	CREATEPOPUPSTRUCT *cps = new CREATEPOPUPSTRUCT;
 	cps->caption = "Z80 Simulator Debugger Log";			// WIN Header
 	cps->flags = PWF_VISIBLE | PWF_SIZEABLE;				// Show + Size
@@ -289,8 +418,12 @@ VOID DsimModel::setup(IINSTANCE *instance, IDSIMCKT *dsimckt) {
 	// Connects function to handle Clock steps (instead of using "simulate")
 	pin_CLK->sethandler(this, (PINHANDLERFN)&DsimModel::clockstep);
 
+	
+
+	//desc.tick_cb = tick_;
 	ResetCPU(0);
 }
+
 
 VOID DsimModel::runctrl(RUNMODES mode) {
 	switch (mode)
@@ -304,7 +437,7 @@ VOID DsimModel::runctrl(RUNMODES mode) {
 	case RM_SUSPEND:
 		sprintf_s(LogMessage, "Suspended...");
 		InfoLog(LogMessage);
-		myMessage->callwindowproc(1, 23, 10);
+		//myMessage->callwindowproc(1, 23, 10);
 		break;
 	case RM_ANIMATE:
 		break;
@@ -349,12 +482,15 @@ BOOL DsimModel::indicate(REALTIME time, ACTIVEDATA *data) {
 }
 
 VOID DsimModel::clockstep(ABSTIME time, DSIMMODES mode) {
-	if (pin_CLK->isedge()) {
-		//ckt->suspend(inst, "Clolc period!");
+	
+	
+		
+		ckt->suspend(inst, "Clolc period!");
 #ifdef DEBUGCALLS
 		sprintf_s(LogMessage, "Cycle %d state %d...", cycle, state);
 		InfoLog(LogMessage);
 #endif
+		if (IsHalted) { cycle = HALT; }
 		switch (cycle) {
 			/*----------------------------------------------*/
 		case FETCH:											// Instruction fetch cycle
@@ -393,22 +529,41 @@ VOID DsimModel::clockstep(ABSTIME time, DSIMMODES mode) {
 				sprintf_s(LogMessage, "    Setting refresh address to 0x%04x...", reg.IR);
 				InfoLog(LogMessage);
 #endif
-				SetAddr(reg.IR, time + 20000);				// Puts the refresh address on the bus 20ns after RD goes up
-				reg.W = reg.R++;
-				reg.R = (reg.W & 0x80) | (reg.R & 0x7f);	// Increments only the 7 first bits of R (the 8th bit stays the same)
-				pin_RFSH->setstate(time + 22000, 1, SLO);	// And brings RFSH low 2ns after that
+				//SetAddr(reg.IR, time + 20000);				// Puts the refresh address on the bus 20ns after RD goes up
+				//reg.W = reg.R++;
+				//reg.R = (reg.W & 0x80) | (reg.R & 0x7f);	// Increments only the 7 first bits of R (the 8th bit stays the same)
+				//pin_RFSH->setstate(time + 22000, 1, SLO);	// And brings RFSH low 2ns after that
 				break;
 			case T3n:
 				pin_MREQ->SetLow;
 				break;
+			case T4p:
+				if (IsHalted) { InstR = 0; }
+				break;
 			case T4n:
 				pin_MREQ->SetHigh;
-				step = 1;									// Start execution of the fetched instruction
-				Execute();
+				if (InstR == 0xCB || InstR == 0xDD || InstR == 0xED || InstR == 0xFD) {
+					if (OpPrefix1==0 && OpPrefix2==0) {
+						OpPrefix1 = InstR;
+					}
+					else {
+						OpPrefix2 = InstR;
+					}		
+					cycle = FETCH;
+					step = 0;
+				}
+				else {
+					opCodePrefix.x = InstR >> 6;
+					opCodePrefix.y = (InstR >> 3) & 7;
+					opCodePrefix.z = InstR & 7;
+					step = 1;									// Start execution of the fetched instruction
+					Execute();
+				}
 				pin_RFSH->SetHigh;
 				break;
 			}
-
+			
+			
 			state++;
 			if (state > T4n)
 				state = T1p;
@@ -479,8 +634,47 @@ VOID DsimModel::clockstep(ABSTIME time, DSIMMODES mode) {
 			if (state > T3n)
 				state = T1p;
 			break;
-		}
-	}
+		case IOREAD:
+			switch (state)
+			{
+			case T1p:
+				break;
+			case T1n:
+				break;
+			default:
+				break;
+			}
+			break;
+		case IOWRITE:
+			switch (state)
+			{
+			case T1p:
+				break;
+			case T1n:
+				break;
+			default:
+				break;
+			}
+			break;
+		case WAIT:
+			if (tReg.WAIT_C > 0) {
+				tReg.WAIT_C--;
+			}
+			else {
+				Execute();
+			}
+			break;
+		//case HALT:
+		//	opCodePrefix.x = 0;
+		//	opCodePrefix.y = 0;
+		//	opCodePrefix.z = 0;
+		//	pin_HALT
+		//	step = 1;									// Start execution NOP instruction
+		//	Execute();
+		//	break;
+
+		}		
+
 }
 
 VOID DsimModel::simulate(ABSTIME time, DSIMMODES mode) {
@@ -488,7 +682,10 @@ VOID DsimModel::simulate(ABSTIME time, DSIMMODES mode) {
 }
 
 VOID DsimModel::callback(ABSTIME time, EVENTID eventid) {
-	sprintf_s(LogMessage, "CallBack: %2x", eventid);
+	
+		//z80_exec(&z80Cpu, 0, time);
+	sprintf_s(LogMessage, "    Clock pin callback: %d", pin_CLK->istate());
 	InfoLog(LogMessage);
 
 }
+DsimModel::~DsimModel(){}
