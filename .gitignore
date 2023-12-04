@@ -45,3 +45,13 @@ $RECYCLE.BIN/
 Network Trash Folder
 Temporary Items
 .apdisk
+.vs
+Debug
+x64
+/Release/Backup Of TestJig.pdsbak
+/Release/Last Loaded TestJig.pdsbak
+/Release/pasmo.exe
+/Release/sjasmplus.exe
+/Release/test.hex
+/Release/test.lst
+/Release/VSMZ80.dll
