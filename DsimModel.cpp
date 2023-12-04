@@ -1,10 +1,6 @@
 #include "StdAfx.h"
 #include "DsimModel.h"
 
-
-//static z80_t cpu;
-//static uint64_t pins;
-//
 const STATE pLOHI[] = { SLO,FLT,FLT,FLT,SLO,SHI };
 const STATE dLOHI[] = { SLO,SHI,FLT,FLT };
 
@@ -99,14 +95,6 @@ void DsimModel::SetCPUState(ABSTIME time) {
 			//out_byte = Z80_GET_DATA(pins);
 		}
 	}
-
-}
-
-void DsimModel::ResetCPU(ABSTIME time) {					// Rests the CPU
-	
-}
-
-void DsimModel::Execute(void) {								// Executes an instruction
 
 }
 
