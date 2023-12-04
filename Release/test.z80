@@ -1,5 +1,5 @@
 	nop
-    ld	A, 00h
+    ld	A, 01h
     ld	HL, 8000h
 back    ld	(HL), A
     inc	L

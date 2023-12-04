@@ -42,6 +42,9 @@
     <ClInclude Include="sdk\vsm.hpp">
       <Filter>Header Files\sdk</Filter>
     </ClInclude>
+    <ClInclude Include="z80.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -57,6 +60,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="VSMZ80.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="z80.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
